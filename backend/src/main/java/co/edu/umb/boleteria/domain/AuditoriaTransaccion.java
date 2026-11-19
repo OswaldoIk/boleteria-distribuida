@@ -1,0 +1,3 @@
+package co.edu.umb.boleteria.domain;
+import jakarta.persistence.*;import java.time.Instant;import java.util.UUID;
+@Entity @Table(name="auditoria_transaccion") public class AuditoriaTransaccion {@Id @Column(name="id_auditoria") UUID id=UUID.randomUUID(); @ManyToOne @JoinColumn(name="id_reserva",nullable=false) Reserva reserva; @Column(name="nodo_bd_ejecutor",nullable=false,length=100) String nodo; @Column(name="tiempo_bloqueo_ms",nullable=false) int bloqueoMs; @Column(name="fecha_registro",nullable=false) Instant fecha=Instant.now(); protected AuditoriaTransaccion(){} public AuditoriaTransaccion(Reserva r,String n,int ms){reserva=r;nodo=n;bloqueoMs=ms;} }

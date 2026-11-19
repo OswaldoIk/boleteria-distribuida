@@ -1,0 +1,80 @@
+services:
+  nodo_centos_primary:
+    build: ./db
+    container_name: nodo_centos_primary
+    environment:
+      ROLE: ${PRIMARY_ROLE:-primary}
+      CLUSTER_NAME: ${CLUSTER_NAME:-boleteria}
+      PRIMARY_HOST: ${PRIMARY_HOST:-nodo_centos_primary}
+      POSTGRES_DB: ${POSTGRES_DB:?Defina POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Defina POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en .env}
+      REPLICATION_USER: ${REPLICATION_USER:?Defina REPLICATION_USER en .env}
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:?Defina REPLICATION_PASSWORD en .env}
+    ports: ["5432:5432"]
+    volumes: ["pg_primary:/var/lib/pgsql/16"]
+    networks:
+      backend_net: {ipv4_address: 172.28.0.2}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: "no"
+
+  nodo_centos_secondary:
+    build: ./db
+    container_name: nodo_centos_secondary
+    environment:
+      ROLE: ${SECONDARY_ROLE:-replica}
+      CLUSTER_NAME: ${CLUSTER_NAME:-boleteria}
+      PRIMARY_HOST: ${PRIMARY_HOST:-nodo_centos_primary}
+      POSTGRES_DB: ${POSTGRES_DB:?Defina POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Defina POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en .env}
+      REPLICATION_USER: ${REPLICATION_USER:?Defina REPLICATION_USER en .env}
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:?Defina REPLICATION_PASSWORD en .env}
+    ports: ["5433:5432"]
+    volumes: ["pg_secondary:/var/lib/pgsql/16"]
+    networks:
+      backend_net: {ipv4_address: 172.28.0.3}
+    depends_on:
+      nodo_centos_primary: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: "no"
+
+  backend:
+    build: ./backend
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Defina POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Defina POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en .env}
+      APP_DEVOPS_USER: ${APP_DEVOPS_USER:-devops}
+      APP_DEVOPS_PASSWORD_HASH: ${APP_DEVOPS_PASSWORD_HASH:?Defina hash BCrypt}
+      APP_ALLOWED_ORIGIN: ${APP_ALLOWED_ORIGIN:-http://localhost:8080}
+    ports: ["8080:8080"]
+    depends_on:
+      nodo_centos_primary: {condition: service_healthy}
+      nodo_centos_secondary: {condition: service_healthy}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [backend_net]
+
+networks:
+  backend_net:
+    driver: bridge
+    ipam:
+      config: [{subnet: 172.28.0.0/16}]
+volumes:
+  pg_primary:
+    name: pg_primary
+  pg_secondary:
+    name: pg_secondary

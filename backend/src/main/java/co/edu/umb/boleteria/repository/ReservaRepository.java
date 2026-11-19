@@ -1,0 +1,3 @@
+package co.edu.umb.boleteria.repository;
+import co.edu.umb.boleteria.domain.*;import jakarta.persistence.LockModeType;import org.springframework.data.jpa.repository.*;import org.springframework.data.repository.query.Param;import java.time.Instant;import java.util.*;
+public interface ReservaRepository extends JpaRepository<Reserva,UUID>{@Lock(LockModeType.PESSIMISTIC_WRITE) @Query("select r from Reserva r where r.id=:id") Optional<Reserva> findLocked(@Param("id") UUID id); @Query("select r from Reserva r join fetch r.localidad where r.estado=co.edu.umb.boleteria.domain.EstadoReserva.ACTIVA and r.fechaExpiracion<=:ahora order by r.localidad.id") List<Reserva> vencidas(@Param("ahora") Instant ahora);}

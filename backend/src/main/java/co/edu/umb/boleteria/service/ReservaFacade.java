@@ -1,0 +1,3 @@
+package co.edu.umb.boleteria.service;
+import co.edu.umb.boleteria.web.dto.ReservaDto;import org.springframework.retry.annotation.*;import org.springframework.stereotype.Service;import org.springframework.dao.TransientDataAccessException;import org.springframework.transaction.CannotCreateTransactionException;import java.util.UUID;
+@Service public class ReservaFacade {final ReservaService servicio;public ReservaFacade(ReservaService s){servicio=s;}@Retryable(retryFor={TransientDataAccessException.class,CannotCreateTransactionException.class},maxAttempts=3,backoff=@Backoff(delay=500,multiplier=2)) public ReservaDto crear(UUID id,String usuario,int cantidad){return servicio.crearReserva(id,usuario,cantidad);}}

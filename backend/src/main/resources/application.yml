@@ -1,0 +1,39 @@
+server:
+  port: 8080
+spring:
+  application.name: boleteria-distribuida
+  datasource:
+    write:
+      jdbc-url: jdbc:postgresql://nodo_centos_primary:5432,nodo_centos_secondary:5432/${POSTGRES_DB}?targetServerType=primary&connectTimeout=3&loginTimeout=5&options=-c%20lock_timeout=3000
+      username: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
+      driver-class-name: org.postgresql.Driver
+      maximum-pool-size: 20
+      connection-timeout: 3000
+      validation-timeout: 2000
+      keepalive-time: 30000
+      max-lifetime: 600000
+    read:
+      jdbc-url: jdbc:postgresql://nodo_centos_secondary:5432,nodo_centos_primary:5432/${POSTGRES_DB}?targetServerType=preferSecondary&connectTimeout=3&loginTimeout=5
+      username: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
+      driver-class-name: org.postgresql.Driver
+      maximum-pool-size: 10
+      connection-timeout: 3000
+      validation-timeout: 2000
+      keepalive-time: 30000
+      max-lifetime: 600000
+  jpa:
+    open-in-view: false
+    hibernate.ddl-auto: validate
+    properties.hibernate.jdbc.time_zone: UTC
+  jackson.default-property-inclusion: non_null
+management.endpoints.web.exposure.include: health,info
+management.endpoint.health.probes.enabled: true
+app:
+  reservas:
+    ttl-minutos: ${RESERVA_TTL_MINUTOS:10}
+    expiracion-scan-ms: ${RESERVA_EXPIRACION_SCAN_MS:30000}
+  allowed-origin: ${APP_ALLOWED_ORIGIN:http://localhost:*}
+  devops-user: ${APP_DEVOPS_USER:devops}
+  devops-password-hash: ${APP_DEVOPS_PASSWORD_HASH}

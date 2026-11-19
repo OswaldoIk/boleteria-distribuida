@@ -1,0 +1,3 @@
+package co.edu.umb.boleteria.domain;
+import jakarta.persistence.*;
+@Entity @DiscriminatorValue("AFORO_GENERAL") public class LocalidadGeneral extends Localidad { protected LocalidadGeneral(){} public boolean validarDisponibilidad(int n){return n>=1&&cuposDisponibles!=null&&cuposDisponibles>=n;} public void reservar(int n){if(!validarDisponibilidad(n))throw new IllegalStateException("Cupos insuficientes");cuposDisponibles-=n;estado=cuposDisponibles==0?EstadoLocalidad.AGOTADO:EstadoLocalidad.DISPONIBLE;} public void liberar(int n){if(n<1||cuposDisponibles+n>capacidadTotal)throw new IllegalArgumentException("Liberación supera capacidad");cuposDisponibles+=n;estado=EstadoLocalidad.DISPONIBLE;} }
